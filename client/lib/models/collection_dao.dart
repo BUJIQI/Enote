@@ -9,14 +9,14 @@ final uuid = Uuid();
 class CollectionDao {
   /// 插入一个谱集记录（添加曲谱到某个谱集）
   static Future<void> insertCollection({
-    required String userid,
+    required String localid,
     required String scoreid,
     required int orderno,
   }) async {
     final dbClient = await DatabaseHelper().db;
     await dbClient.insert('Collection', {
       'Collectionid': uuid.v4(),
-      'Userid': userid,
+      'localid': localid,
       'Scoreid': scoreid,
       'Orderno': orderno,
     });
@@ -24,13 +24,13 @@ class CollectionDao {
 
   /// 查询某用户创建的所有谱集（不去重）
   static Future<List<Map<String, dynamic>>> fetchCollectionsByUserId({
-    required String userid,
+    required String localid,
   }) async {
     final dbClient = await DatabaseHelper().db;
     return await dbClient.query(
       'Collection',
-      where: 'Userid = ?',
-      whereArgs: [userid],
+      where: 'localid = ?',
+      whereArgs: [localid],
       orderBy: 'Orderno ASC',
     );
   }

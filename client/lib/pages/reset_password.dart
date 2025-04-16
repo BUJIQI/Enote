@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
+import '/models/database_helper.dart';
 
 class ResetPasswordPage extends StatefulWidget {
   const ResetPasswordPage({super.key});
@@ -50,6 +51,14 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         final responseData = jsonDecode(response.body);
 
         if (response.statusCode == 200) {
+          final dbHelper = DatabaseHelper();
+          final updated = await dbHelper.resetLocalPassword(username, newPassword);
+
+          if (updated) {
+            debugPrint('✅ 本地密码已同步更新');
+          } else {
+            debugPrint('⚠️ 本地找不到该用户，未更新密码');
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('密码重置成功，请返回登录')),
           );

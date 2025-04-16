@@ -5,22 +5,22 @@ import 'package:uuid/uuid.dart';
 final uuid = Uuid();
 
 class CollectionInfoDao {
-  static Future<void> createCollection(String userid, String title) async {
+  static Future<void> createCollection(int? localid, String title) async {
     final db = await DatabaseHelper().db;
     await db.insert('CollectionInfo', {
       'Collectionid': uuid.v4(),
-      'Userid': userid,
+      'localid': localid,
       'Title': title,
       'Create_time': DateTime.now().toIso8601String(),
     });
   }
 
-  static Future<List<Map<String, dynamic>>> fetchCollections(String userid) async {
+  static Future<List<Map<String, dynamic>>> fetchCollections(int? localid) async {
     final db = await DatabaseHelper().db;
     return await db.query(
       'CollectionInfo',
-      where: 'Userid = ?',
-      whereArgs: [userid],
+      where: 'localid = ?',
+      whereArgs: [localid],
       orderBy: 'Create_time DESC',
     );
   }
@@ -41,3 +41,4 @@ class CollectionInfoDao {
     );
   }
 }
+

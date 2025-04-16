@@ -5,8 +5,8 @@ import 'dart:convert';
 import 'enter.dart';
 import 'dart:async';
 import 'dart:io'; // Add this line to access SocketException
-import 'package:shared_preferences/shared_preferences.dart';
-
+import '/models/user.dart';
+import '/models/database_helper.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -235,28 +235,48 @@ class _RegisterPageState extends State<RegisterPage> {
           body: jsonEncode({
             'username': _usernameController.text,
             'password': _passwordController.text,
+            'sync_enabled': _syncEnabled,
           }),
         )
             .timeout(const Duration(seconds: 10));
 
         final responseData = jsonDecode(response.body);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(responseData['message']),
-            backgroundColor: response.statusCode == 200 ? Colors.green : Colors
-                .red,
-          ),
-        );
+        if (response.statusCode == 201) {
+          final userId = responseData['userId']; // String 类型
+          print('注册成功，用户ID: $userId');
 
-        if (response.statusCode == 200) {
+          User user = User(
+            userId: userId, // ✅ 确保是 String 类型（User 类字段也要改成 String）
+            username: _usernameController.text,
+            password: _passwordController.text,
+            SyncEnabled: _syncEnabled,
+          );
+
+          await DatabaseHelper().insertUser(user);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('注册成功！'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const LoginPage()),
           );
+        } else {
+          // 非 201 情况，比如用户名已存在
+          final message = responseData['message'] ?? '注册失败，请重试';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('注册失败: $message'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       } on http.ClientException catch (e) {
-        // 网络连接问题
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('网络连接失败: ${e.message}'),
@@ -264,7 +284,6 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         );
       } on TimeoutException {
-        // 请求超时
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('请求超时，请检查网络'),
@@ -272,7 +291,6 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         );
       } on SocketException catch (e) {
-        // 服务器不可达（没有网络或服务器地址错误等）
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('网络错误: ${e.message}'),
@@ -280,7 +298,6 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         );
       } on FormatException catch (e) {
-        // JSON 解析错误
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('数据格式错误: ${e.message}'),
@@ -288,7 +305,6 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         );
       } catch (e) {
-        // 捕获其他所有错误
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('发生错误: $e'),

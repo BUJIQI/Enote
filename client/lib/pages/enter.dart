@@ -6,6 +6,9 @@ import 'user_info.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'reset_password.dart';
+import '/models/database_helper.dart';
+import'/models/user_session.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -208,9 +211,14 @@ class _LoginPageState extends State<LoginPage> {
         CheckboxListTile(
           title: const Text('启用云同步'),
           value: _syncEnabled,
-          onChanged: (value) => setState(() => _syncEnabled = value!),
-          controlAffinity: ListTileControlAffinity.leading,
-          activeColor: primaryColor,
+          onChanged: (value) async {
+            setState(() => _syncEnabled = value!);
+
+            // ⚠️ 实时更新数据库中的 syncEnabled
+            final dbHelper = DatabaseHelper();
+
+            await dbHelper.updateSyncEnabled(_usernameController.text, value!);
+          },
         ),
       ],
     );
@@ -237,6 +245,23 @@ class _LoginPageState extends State<LoginPage> {
         if (response.statusCode == 200) {
           // 保存用户数据
           await _saveUserData(responseData['token'], _usernameController.text);
+
+          final dbHelper = DatabaseHelper();
+          final dbClient = await dbHelper.db;
+
+// 查询本地数据库中该用户名对应的 localid
+          final result = await dbClient.query(
+            'users',
+            where: 'username = ?',
+            whereArgs: [_usernameController.text],
+          );
+
+          if (result.isNotEmpty) {
+            int localId = result.first['localid'] as int;
+            UserSession.setLocalId(localId);
+            print("✅ 当前用户 localid: $localId");
+          }
+
 
           // 跳转页面
           Navigator.pushReplacement(
