@@ -1,17 +1,16 @@
 // lib/models/user_session.dart
 class UserSession {
-  static int? _localId;
+  static String _userid = 'dev_mock_user'; // ✅ 临时写死，登录功能完成后再替换
 
-  static int? getLocalId() {
-    return _localId;
+  static String getUserId() {
+    return _userid;
   }
 
-  static void setLocalId(int id) {
-    _localId = id;
+  static void setUserId(String newId) {
+    _userid = newId;
   }
 
   static void reset() {
-    _localId = null;
+    _userid = 'dev_mock_user';
   }
 }
-

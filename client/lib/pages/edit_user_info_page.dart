@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '/models/database_helper.dart';
+
 
 class EditUserInfoPage extends StatefulWidget {
   final String currentUsername;
@@ -42,7 +42,6 @@ class _EditUserInfoPageState extends State<EditUserInfoPage> {
     setState(() => _isSaving = true);
 
     try {
-      final dbHelper = DatabaseHelper();
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? '';
 
@@ -70,11 +69,6 @@ class _EditUserInfoPageState extends State<EditUserInfoPage> {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        await dbHelper.updateUsernameAndPassword(
-          currentUsername: widget.currentUsername,
-          newUsername: newName,
-          newPassword: newPassword,
-        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(data['message'] ?? '资料已保存')),
         );
