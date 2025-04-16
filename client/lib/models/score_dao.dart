@@ -22,7 +22,7 @@ class ScoreDao {
       'Userid': userid,
       'Title': title,
       'Create_time': now,
-      'Access_time': now,
+      'Modify_time': now,
       'MxlPath': mxlPath,  // ✅ 更新字段
       'Image': image,
     });
@@ -39,7 +39,7 @@ class ScoreDao {
       'Score',
       where: 'Userid = ?',
       whereArgs: [userid],
-      orderBy: 'Access_time DESC',
+      orderBy: 'Modify_time DESC',
     );
   }
 
@@ -65,11 +65,11 @@ class ScoreDao {
   }
 
   // 更新访问时间
-  static Future<void> updateAccessTime(String scoreid) async {
+  static Future<void> updateModifyTime(String scoreid) async {
     final dbClient = await DatabaseHelper().db;
     await dbClient.update(
       'Score',
-      {'Access_time': DateTime.now().toIso8601String()},
+      {'Modify_time': DateTime.now().toIso8601String()},
       where: 'Scoreid = ?',
       whereArgs: [scoreid],
     );
@@ -80,4 +80,33 @@ class ScoreDao {
     final result = await db.query('Score');
     print('🧾 当前 Score 表数据：\$result');
   }
+
+
+  static Future<void> replaceScore({
+    required String scoreId,
+    required String userId,
+    required String title,
+    required String createTime,
+    required String modifyTime,
+    required String? mxlPath,
+    required String? image,
+  }) async {
+    final db = await DatabaseHelper().db;
+
+    await db.insert(
+      'Score',
+      {
+        'Scoreid': scoreId,
+        'Userid': userId,
+        'Title': title,
+        'Create_time': createTime,
+        'Modify_time': modifyTime,
+        'MxlPath': mxlPath,
+        'Image': image,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace, // ✅ 覆盖已有记录
+    );
+    print('🔁 已覆盖本地 Score：$scoreId');
+  }
+
 }

@@ -14,6 +14,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'Register.dart';
 import 'enter.dart';
 import 'user_info.dart';
+import 'dart:convert'; // for jsonEncode / jsonDecode / base64Decode
+import 'dart:io'; // for File
+import 'package:path_provider/path_provider.dart'; // for getApplicationDocumentsDirectory
+import 'package:http/http.dart' as http; // for http.MultipartRequest
+
 
 
 
@@ -93,6 +98,7 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
   TextEditingController searchController = TextEditingController();
 
   void loadScoresFromDB() async {
+    await triggerCloudSync();
     final userid = UserSession.getUserId();
     final result = await ScoreDao.fetchAllScores(userid: userid);
 
@@ -102,7 +108,7 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
         name: row['Title'] as String,
         image: row['Image'] as String? ?? 'assets/imgs/score_icon.jpg',
         mxlPath: row['MxlPath'] as String?,
-        accessTime: row['Access_time'] as String?, // ✅ 加上这行
+        modifyTime: row['Modify_time'] as String?,// ✅ 加上这行
       )).toList();
       sortScores(); // ✅ 排序
     });
@@ -111,8 +117,8 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
   void sortScores() {
     if (currentSort == '时间排序') {
       scoreList.sort((a, b) {
-        final aTime = DateTime.tryParse(a.accessTime ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final bTime = DateTime.tryParse(b.accessTime ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final aTime = DateTime.tryParse(a.modifyTime ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bTime = DateTime.tryParse(b.modifyTime ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
         return bTime.compareTo(aTime); // ✅ 最近时间在前
       });
     } else if (currentSort == '首字母排序') {
@@ -208,6 +214,91 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
       showSortMenu = false;
       sortScores();
     });
+  }
+
+  Future<void> syncScoresWithServer() async {
+    final userid = UserSession.getUserId();
+    final allScores = await ScoreDao.fetchAllScores(userid: userid);
+
+    final uri = Uri.parse('http://47.96.162.67:5000/scores/sync');
+    final request = http.MultipartRequest('POST', uri);
+
+    // 添加曲谱 JSON 元信息
+    final scoresJson = allScores.map((score) => {
+      "scoreId": score['Scoreid'],
+      "Userid": score['Userid'],
+      "Title": score['Title'],
+      "Create_time": score['Create_time'],
+      "Modify_time": score['Access_time'],
+      "MxlPath": score['MxlPath'],
+      "Image": score['Image'],
+    }).toList();
+    request.fields['scores'] = jsonEncode({"scores": scoresJson});
+
+    // 添加 MXL 文件
+    for (var score in allScores) {
+      final path = score['MxlPath'];
+      if (path != null && File(path).existsSync()) {
+        final fileBytes = await File(path).readAsBytes();
+        request.files.add(http.MultipartFile.fromBytes(
+          score['Scoreid'],
+          fileBytes,
+          filename: "${score['Scoreid']}.mxl",
+        ));
+      }
+    }
+
+    // 发送请求
+    final response = await request.send();
+    final responseBody = await response.stream.bytesToString();
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(responseBody);
+      final message = data['message'];
+      print("✅ 同步结果：$message");
+
+      if (message == '服务端版本较新，须覆盖客户端') {
+        final updatedScore = data['serverScore'];
+        final base64Data = data['fileData'];
+
+        final dir = await getApplicationDocumentsDirectory();
+        final savePath = '${dir.path}/${updatedScore["scoreId"]}.mxl';
+        final file = File(savePath);
+        await file.writeAsBytes(base64Decode(base64Data));
+
+        // 用服务端数据覆盖本地
+        await ScoreDao.insertScore(
+          userid: updatedScore['Userid'],
+          title: updatedScore['Title'],
+          mxlPath: savePath,
+          image: updatedScore['Image'],
+        );
+      }
+
+      // 同步后刷新界面
+      loadScoresFromDB();
+    } else {
+      print("❌ 同步失败：$responseBody");
+    }
+  }
+
+
+
+  Future<void> triggerCloudSync() async {
+    final userid = UserSession.getUserId();
+    final local = await ScoreDao.fetchAllScores(userid: userid);
+
+    final formatted = local.map((row) => {
+      'scoreId': row['Scoreid'],
+      'Userid': row['Userid'],
+      'Title': row['Title'],
+      'Create_time': row['Create_time'],
+      'Modify_time': row['Modify_time'],
+      'MxlPath': row['MxlPath'],
+      'Image': row['Image'],
+    }).toList();
+
+    await syncScoresWithServer();
   }
 
   // 导航到个人主页（示例页面）
@@ -838,13 +929,17 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
               ),
               // 主体内容（曲谱或谱集）
               Expanded(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
-                  child: activeTab == 'shelf'
-                      ? buildScoreGrid()
-                      : selectedCollection == null
+                child: RefreshIndicator(
+                  onRefresh: syncScoresWithServer,
+                  child: SingleChildScrollView(
+                    physics: AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    child: activeTab == 'shelf'
+                        ? buildScoreGrid()
+                        : selectedCollection == null
                         ? buildCollectionGrid()
                         : buildSelectedCollectionScoreGrid(),
+                  ),
                 ),
               ),
             ],

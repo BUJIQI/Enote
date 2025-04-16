@@ -6,6 +6,8 @@ import '../models/score_item.dart';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:archive/archive.dart';
+import '../models/database_helper.dart';
+import '../models/score_dao.dart';
 
 /// MXL 曲谱详情页：使用 Flat 编辑器
 class MxlScoreDetailPage extends StatefulWidget {
@@ -125,10 +127,26 @@ class _MxlScoreDetailPageState extends State<MxlScoreDetailPage> {
       final file = File(path);
       await file.writeAsBytes(bytes);
       _hasSaved = true;
+
+      await ScoreDao.updateModifyTime(widget.scoreItem.id);
+
+      // ✅ 调试输出修改时间
+      final db = await DatabaseHelper().db;
+      final result = await db.query(
+        'Score',
+        columns: ['Modify_time'],
+        where: 'Scoreid = ?',
+        whereArgs: [widget.scoreItem.id],
+      );
+      if (result.isNotEmpty) {
+        print('🕓 当前修改时间: ${result.first['Modify_time']}');
+      }
+
       if (mounted) Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('修改已保存')));
     }
   }
+
 
   String _escapeForJS(String input) {
     return input

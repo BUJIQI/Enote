@@ -41,7 +41,7 @@ class DatabaseHelper {
       Userid TEXT NOT NULL,
       Title TEXT NOT NULL,
       Create_time TEXT NOT NULL,
-      Access_time TEXT NOT NULL,
+      Modify_time TEXT NOT NULL,
       MxlPath TEXT,         -- ✅ 改为保存本地 MXL 路径
       Image TEXT
     )

@@ -7,6 +7,8 @@ import 'about_us_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'edit_user_info_page.dart';
+import '../models/database_helper.dart';
+
 
 
 class UserInfoPage extends StatefulWidget {
@@ -29,7 +31,7 @@ class _UserInfoPageState extends State<UserInfoPage> {
   // 云同步设置：POST 请求携带令牌，同步状态到云端
   Future<void> _sendSyncStatusToCloud(bool enabled) async {
     final url =
-    Uri.parse('http://10.0.2.2:5000/sync_enabled'); // 替换为你的真实接口地址
+    Uri.parse('http://47.96.162.67:5000/sync_enabled'); // 替换为你的真实接口地址
     final response = await http.post(
       url,
       headers: {
@@ -56,7 +58,7 @@ class _UserInfoPageState extends State<UserInfoPage> {
 
   // 退出登录：先发送 GET 请求通知云端，然后清除缓存并返回个人主页
   Future<void> _notifyServerLogout() async {
-    final url = Uri.parse('http://10.0.2.2:5000/logout'); // 替换为你的真实接口地址
+    final url = Uri.parse('http://47.96.162.67:5000/logout'); // 替换为你的真实接口地址
     final response = await http.get(
       url,
       headers: {
@@ -317,12 +319,18 @@ class _UserInfoPageState extends State<UserInfoPage> {
             ? Switch(
           value: _syncEnabled,
           activeColor: const Color(0xFFEFCE78),
-          onChanged: (value) {
+          onChanged: (value) async {
             setState(() => _syncEnabled = value);
-            _sendSyncStatusToCloud(value);
+
+            // ✅ 发送到云端
+            await _sendSyncStatusToCloud(value);
+
+            // ✅ 更新本地数据库
+            final dbHelper = DatabaseHelper();
           },
         )
             : const Icon(FontAwesomeIcons.chevronRight, size: 14),
+
         onTap: onTap,
       ),
     );
@@ -355,3 +363,4 @@ class _UserInfoPageState extends State<UserInfoPage> {
     );
   }
 }
+

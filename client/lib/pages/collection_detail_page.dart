@@ -30,7 +30,7 @@ class _CollectionDetailPageState extends State<CollectionDetailPage> {
   }
 
   void openScore(ScoreItem item) {
-    ScoreDao.updateAccessTime(item.id);
+    ScoreDao.updateModifyTime(item.id);
     Navigator.push(
       context,
       MaterialPageRoute(
