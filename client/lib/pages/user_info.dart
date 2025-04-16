@@ -7,7 +7,7 @@ import 'about_us_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'edit_user_info_page.dart';
-import '/models/database_helper.dart';
+
 
 class UserInfoPage extends StatefulWidget {
   final String token;
@@ -317,19 +317,12 @@ class _UserInfoPageState extends State<UserInfoPage> {
             ? Switch(
           value: _syncEnabled,
           activeColor: const Color(0xFFEFCE78),
-          onChanged: (value) async {
+          onChanged: (value) {
             setState(() => _syncEnabled = value);
-
-            // ✅ 发送到云端
-            await _sendSyncStatusToCloud(value);
-
-            // ✅ 更新本地数据库
-            final dbHelper = DatabaseHelper();
-            await dbHelper.updateSyncEnabled(widget.username, value);
+            _sendSyncStatusToCloud(value);
           },
         )
             : const Icon(FontAwesomeIcons.chevronRight, size: 14),
-
         onTap: onTap,
       ),
     );
@@ -362,4 +355,3 @@ class _UserInfoPageState extends State<UserInfoPage> {
     );
   }
 }
-

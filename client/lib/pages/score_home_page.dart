@@ -52,10 +52,10 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
           print('以图像方式导入曲谱');
         },
         onMxlImported: (ScoreItem item) async {
-          final localid = UserSession. getLocalId();
+          final userid = UserSession.getUserId();
 
           final scoreId = await ScoreDao.insertScore(
-            localid: localid,
+            userid: userid,
             title: item.name,
             mxlPath: item.mxlPath, // ✅ 改为 mxlPath
             image: item.image,
@@ -93,8 +93,8 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
   TextEditingController searchController = TextEditingController();
 
   void loadScoresFromDB() async {
-    final localid = UserSession. getLocalId();
-    final result = await ScoreDao.fetchAllScores(localid: localid);
+    final userid = UserSession.getUserId();
+    final result = await ScoreDao.fetchAllScores(userid: userid);
 
     setState(() {
       scoreList = result.map((row) => ScoreItem(
@@ -122,8 +122,8 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
 
 
   void addNewScore(String name) async {
-    final localid = UserSession. getLocalId();
-    await ScoreDao.insertScore(localid: localid, title: name);
+    final userid = UserSession.getUserId();
+    await ScoreDao.insertScore(userid: userid, title: name);
     loadScoresFromDB();
   }
 
@@ -138,8 +138,8 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
     required String title,
     required String collectionId,
   }) async {
-    final localid = UserSession. getLocalId();
-    final scoreId = await ScoreDao.insertScore(localid: localid, title: title);
+    final userid = UserSession.getUserId();
+    final scoreId = await ScoreDao.insertScore(userid: userid, title: title);
 
     await CollectionItemDao.insertScoreToCollection(
       collectionId: collectionId,
@@ -170,7 +170,7 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
   }
 
   void loadCollections() async {
-    final userid = UserSession. getLocalId();
+    final userid = UserSession.getUserId();
     final result = await CollectionInfoDao.fetchCollections(userid);
     setState(() {
       collectionList = result;
@@ -311,7 +311,7 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
             width: double.maxFinite,
             height: 300, // ✅ 显式设置整个内容区域高度
             child: FutureBuilder<List<Map<String, dynamic>>>(
-              future: CollectionInfoDao.fetchCollections(UserSession.getLocalId()),
+              future: CollectionInfoDao.fetchCollections(UserSession.getUserId()),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());
@@ -475,8 +475,8 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
                 final title = controller.text.trim();
                 if (title.isEmpty) return;
 
-                final localid = UserSession.getLocalId();
-                await CollectionInfoDao.createCollection(localid, title);
+                final userid = UserSession.getUserId();
+                await CollectionInfoDao.createCollection(userid, title);
                 Navigator.pop(context);
                 loadCollections(); // 刷新列表
               },
