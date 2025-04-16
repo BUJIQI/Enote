@@ -1,11 +1,41 @@
 from flask import Blueprint, request, jsonify, send_file
 import subprocess
-import time 
+import time
 from werkzeug.utils import secure_filename
 import os
-
+import cv2
 
 omr_bp = Blueprint('omr', __name__)
+
+def preprocess_image(image_path):
+    print("🔧 开始图像预处理:", image_path)
+    img = cv2.imread(image_path)
+
+    if img is None:
+        print("❌ 无法读取图像:", image_path)
+        return
+
+    # 🔼 Step 1: 放大图像（放大 2 倍）
+    img = cv2.resize(img, None, fx=2.0, fy=2.0, interpolation=cv2.INTER_CUBIC)
+    print("🔍 图像已放大 2 倍")
+
+    # Step 2: 转为灰度图
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    # Step 3: 中值滤波去噪
+    denoised = cv2.medianBlur(gray, 3)
+
+    # Step 4: 自适应阈值二值化
+    binary = cv2.adaptiveThreshold(
+        denoised, 255,
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY,
+        11, 2
+    )
+
+    # 保存覆盖原图
+    cv2.imwrite(image_path, binary)
+    print("✅ 图像预处理完成")
 
 
 @omr_bp.route('/omr', methods=['POST'])
@@ -14,12 +44,11 @@ def do_omr():
         return jsonify({'error': '没有文件部分'}), 400
 
     file = request.files['file']
-
     if file.filename == '':
         return jsonify({'error': '未选择文件'}), 400
 
     if file:
-        # 1. 保存上传的文件
+        # 保存上传文件
         time_flag = time.strftime(r"%Y%m%d%H%M%S")
         filename, ext = os.path.splitext(file.filename)
         new_filename = secure_filename(f"{filename}_{time_flag}{ext}")
@@ -27,40 +56,50 @@ def do_omr():
         os.makedirs(folder_path, exist_ok=True)
         file_path = os.path.join(folder_path, new_filename)
         file.save(file_path)
+
+        # 图像预处理（包含放大 + 灰度 + 去噪 + 二值化）
+        preprocess_image(file_path)
+
+        # 设置 OCR 路径
         env = os.environ.copy()
         env['TESSDATA_PREFIX'] = 'src\\audiveris\\tessdata'
 
-        # 2. 调用 audiveris 命令行进行 OMR
-        command = [
-            'src\\audiveris\\bin\\audiveris.bat',
-            '@src/audiveris/cli.txt',
+        # 调用 audiveris
+        command = (
+            f'src\\audiveris\\bin\\audiveris.bat '
+            f'@src/audiveris/cli.txt '
             f'src/audiveris/omr_tmp/{new_filename}'
-        ]
-        print("omr识别开始")
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=env)
+        )
+
+        print("🎼 OMR识别开始")
+        process = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            shell=True,  # ✅ 关键：运行 .bat 脚本需要 shell
+            env=env, 
+            encoding='utf-8', 
+            errors='replace' 
+        )
         stdout, stderr = process.communicate()
         process.wait()
-        print("omr识别结束\n", stdout, stderr, "over")
+        print("🎼 OMR识别结束\n", stdout, stderr, "over")
 
-        # 3. 假设 audiveris 会在同路径下生成 .mxl 文件
-        #    例如把 .ext(可能是png/jpg/pdf) 替换为 .mxl
+        # 构建 MXL 路径
         base_name = os.path.splitext(new_filename)[0]
-        print(base_name)  # filename_时间戳
-        BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # app/routes
-        SERVER_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))  # 回到 server/
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        SERVER_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
         mxl_file_path = os.path.join(SERVER_DIR, "src", "audiveris", "output", f"{base_name}.mxl")
-        print(mxl_file_path)
 
         if os.path.exists(mxl_file_path):
-            # 4. 把 MXL 文件作为附件发回给客户端
             return send_file(
                 mxl_file_path,
                 mimetype="application/vnd.recordare.musicxml",
                 as_attachment=True,
-                download_name=f"{base_name.split("_")[0]}.mxl"  # 下载时客户端看到的文件名
+                download_name=f"{base_name.split('_')[0]}.mxl"
             )
         else:
             return jsonify({"error": "MXL 文件未生成"}), 500
 
     return jsonify({'error': '文件格式不支持'}), 400
-
