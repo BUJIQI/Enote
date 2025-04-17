@@ -165,9 +165,7 @@ class _UserInfoPageState extends State<UserInfoPage> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(32),
               image: const DecorationImage(
-                image: NetworkImage(
-                  'https://ai-public.mastergo.com/ai/img_res/f9d4bf75acdf5668fd86035de83af545.jpg',
-                ),
+                image: AssetImage('assets/imgs/score_icon.jpg'),
                 fit: BoxFit.cover,
               ),
             ),

@@ -626,7 +626,7 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.asset(
-                    'assets/imgs/score_icon.jpg',
+                    'assets/imgs/score_icon.jpg', // ✅ 一律使用默认
                     width: 110,
                     height: 110,
                     fit: BoxFit.cover,
@@ -775,7 +775,7 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       image: DecorationImage(
-                        image: NetworkImage(item.image),
+                        image: const AssetImage('assets/imgs/score_icon.jpg'),
                         fit: BoxFit.cover,
                       ),
                     ),

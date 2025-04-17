@@ -102,7 +102,7 @@ class ScoreDao {
         'Create_time': createTime,
         'Modify_time': modifyTime,
         'MxlPath': mxlPath,
-        'Image': image,
+        'Image': image ?? 'assets/imgs/score_icon.jpg',
       },
       conflictAlgorithm: ConflictAlgorithm.replace, // ✅ 覆盖已有记录
     );

@@ -230,7 +230,7 @@ class _RegisterPageState extends State<RegisterPage> {
       try {
         final response = await http
             .post(
-          Uri.parse('http://10.0.2.2:5000/register'),
+          Uri.parse('http://47.96.162.67:5000/register'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'username': _usernameController.text,
