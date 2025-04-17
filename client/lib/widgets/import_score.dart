@@ -7,6 +7,8 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import '../models/score_item.dart';
+import '../widgets/loading_dialog.dart';
+
 
 class ImportHandler {
   final BuildContext context;
@@ -32,33 +34,31 @@ class ImportHandler {
   }
 
   Future<void> importByImage() async {
-    Navigator.pop(context);
-    print('以图像方式导入曲谱');
+    Navigator.pop(context); // 关闭导入方式弹窗
 
     final result = await FilePicker.platform.pickFiles(
       type: FileType.any,
       withData: true,
     );
-    if (result == null || result.files.isEmpty) {
-      print('没有选择文件');
-      return;
-    }
+    if (result == null || result.files.isEmpty) return;
 
     final fileBytes = result.files.first.bytes;
     if (fileBytes == null) return;
 
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const LoadingDialog(),
+    );
+
     final uri = Uri.parse('http://47.96.162.67:5000/omr');
     final request = http.MultipartRequest('POST', uri)
-      ..files.add(
-        http.MultipartFile.fromBytes(
-          'file',
-          fileBytes,
-          filename: result.files.first.name,
-        ),
-      );
+      ..files.add(http.MultipartFile.fromBytes('file', fileBytes, filename: result.files.first.name));
 
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
+
+    Navigator.pop(context);
 
     if (response.statusCode == 200) {
       final mxlBytes = response.bodyBytes;
@@ -85,12 +85,11 @@ class ImportHandler {
   }
 
   Future<void> importByMXL() async {
-    Navigator.pop(context);
+    Navigator.pop(context); // 关闭导入方式对话框
     print('以MXL文件导入曲谱');
 
     final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['mxl'],
+      type: FileType.any,
       withData: true,
     );
     if (result == null || result.files.isEmpty) {
@@ -101,8 +100,15 @@ class ImportHandler {
     final fileBytes = result.files.first.bytes;
     if (fileBytes == null) return;
 
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const LoadingDialog(),
+    );
+
     final xmlString = _unzipMxlToXml(fileBytes);
     if (xmlString == null) {
+      Navigator.pop(context); // 关闭加载框
       print('❌ 无法从选定的 MXL 中解出 XML');
       return;
     }
@@ -118,6 +124,8 @@ class ImportHandler {
     final file = File(savedPath);
     await file.writeAsBytes(fileBytes);
 
+    Navigator.pop(context); // ✅ 加载完成，关闭 loading
+
     final newItem = ScoreItem(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: extractedTitle ?? '未命名曲谱',
@@ -126,6 +134,7 @@ class ImportHandler {
     );
     onMxlImported(newItem);
   }
+
 
   Future<bool> _importMxlFromLocalFile(String filePath, String name) async {
     try {

@@ -14,28 +14,12 @@ def preprocess_image(image_path):
     if img is None:
         print("❌ 无法读取图像:", image_path)
         return
-
-    # 🔼 Step 1: 放大图像（放大 2 倍）
     img = cv2.resize(img, None, fx=2.0, fy=2.0, interpolation=cv2.INTER_CUBIC)
     print("🔍 图像已放大 2 倍")
-
-    # Step 2: 转为灰度图
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    # Step 3: 中值滤波去噪
-    denoised = cv2.medianBlur(gray, 3)
-
-    # Step 4: 自适应阈值二值化
-    binary = cv2.adaptiveThreshold(
-        denoised, 255,
-        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        cv2.THRESH_BINARY,
-        11, 2
-    )
-
-    # 保存覆盖原图
-    cv2.imwrite(image_path, binary)
+    cv2.imwrite(image_path, gray)
     print("✅ 图像预处理完成")
+
 
 
 @omr_bp.route('/omr', methods=['POST'])
