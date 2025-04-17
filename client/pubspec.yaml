@@ -44,6 +44,7 @@ dev_dependencies:
   path_provider:
   sqflite:
   uuid:
+  flutter_launcher_icons: ^0.13.1
 
 
   # The "flutter_lints" package below contains a set of recommended lints to
@@ -67,6 +68,7 @@ flutter:
     - assets/web/editor.html
     - assets/web/embed.min.js
     - assets/imgs/score_icon.jpg
+    - assets/imgs/logo_icon.jpg
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
@@ -74,7 +76,9 @@ flutter:
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
-
+flutter_icons:
+  android: true
+  image_path: "assets/imgs/logo_icon.jpg"
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/to/asset-from-package
 
