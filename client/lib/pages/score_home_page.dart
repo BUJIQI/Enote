@@ -322,43 +322,6 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
     }
 
   }
-  
-  void showSearch() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('搜索曲谱'),
-          content: TextField(
-            controller: searchController,
-            autofocus: true,
-            decoration: InputDecoration(hintText: '输入曲谱标题'),
-            onChanged: (value) {
-              setState(() {
-                searchText = value;
-              });
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  searchText = '';
-                  searchController.clear();
-                });
-                Navigator.pop(context);
-              },
-              child: Text('清除'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('关闭'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
 
 
@@ -481,17 +444,6 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
                 },
               ),
               ListTile(
-                leading: Icon(Icons.share),
-                title: Text('分享'),
-                onTap: () {
-                  Navigator.pop(context);
-                  // 这里可以调用系统分享逻辑或其它扩展
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text('分享功能待实现'),
-                  ));
-                },
-              ),
-              ListTile(
                 leading: Icon(Icons.add_box),
                 title: Text('添加到谱集'),
                 onTap: () {
@@ -572,6 +524,73 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
                 loadCollections(); // 刷新列表
               },
               child: Text('创建'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void showCollectionActions(Map<String, dynamic> collection, int index) {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: Icon(Icons.edit),
+                title: Text('重命名'),
+                onTap: () {
+                  Navigator.pop(context);
+                  showRenameCollectionDialog(collection);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.delete, color: Colors.red),
+                title: Text('删除'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await CollectionInfoDao.deleteCollection(collection['Collectionid']);
+                  loadCollections(); // 重新加载谱集列表
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void showRenameCollectionDialog(Map<String, dynamic> collection) {
+    final controller = TextEditingController(text: collection['Title']);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('重命名谱集'),
+          content: TextField(
+            controller: controller,
+            decoration: InputDecoration(hintText: '请输入新名称'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('取消'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final newTitle = controller.text.trim();
+                if (newTitle.isNotEmpty) {
+                  await CollectionInfoDao.renameCollection(collection['Collectionid'], newTitle);
+                  loadCollections(); // 更新 UI
+                }
+                Navigator.pop(context);
+              },
+              child: Text('确认'),
             ),
           ],
         );
@@ -679,7 +698,7 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
             });
           },
           onLongPress: () {
-            // 未来添加：弹出谱集操作栏
+            showCollectionActions(collectionList[index - 1], index - 1);
           },
           child: Column(
             children: [
@@ -718,7 +737,16 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
 
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           print('🔍 没查到谱集曲谱！');
-          return Center(child: Text('该谱集中暂无曲谱'));
+          return SizedBox(
+            height: MediaQuery.of(context).size.height - 500, // 减去顶部导航栏高度
+            child: Center(
+              child: Text(
+                '该谱集中暂无曲谱',
+                style: TextStyle(fontSize: 22),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          );
         }
 
         final scores = snapshot.data!;
@@ -805,26 +833,33 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
                     ),
                     SizedBox(width: 20.0),
                     Expanded(
-                      child: GestureDetector(
-                        onTap: showSearch,
-                        child: Container(
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: Color(0xFFFDFDFD),
-                            borderRadius: BorderRadius.circular(18),
+                      child: Container(
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Color(0xFFFDFDFD),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 15),
+                        child: TextField(
+                          controller: searchController,
+                          onChanged: (value) {
+                            setState(() {
+                              searchText = value;
+                            });
+                          },
+                          onSubmitted: (value) {
+                            setState(() {
+                              searchText = value;
+                            });
+                          },
+                          decoration: InputDecoration(
+                            icon: Icon(Icons.search, size: 20, color: Color(0xFF999999)),
+                            hintText: '搜索我的曲谱',
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(vertical: 8),
                           ),
-                          padding: EdgeInsets.symmetric(horizontal: 15),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Icon(Icons.search, size: 20, color: Color(0xFF999999)),
-                              SizedBox(width: 10),
-                              Text(
-                                '搜索我的曲谱',
-                                style: TextStyle(color: Color(0xFF999999), fontSize: 14),
-                              ),
-                            ],
-                          ),
+                          style: TextStyle(fontSize: 14, color: Colors.black87),
                         ),
                       ),
                     ),
