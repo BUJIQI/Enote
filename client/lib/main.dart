@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
       theme: themeProvider.lightTheme,
       darkTheme: themeProvider.darkTheme,
       themeMode: themeProvider.currentTheme,
-      home:ScoreHomePage(), // ✅ 你的主页面
+      home:ScoreHomePage(), 
       routes: {
         '/main': (context) => ScoreHomePage(),
         '/user_info': (context) => const UserInfoPage(token: '', username: ''),

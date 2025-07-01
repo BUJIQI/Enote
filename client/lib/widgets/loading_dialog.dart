@@ -13,7 +13,7 @@ class LoadingDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.asset('assets/imgs/cat.png', width: 150), // ⬅️ 确保这张图已加入 assets
+            Image.asset('assets/imgs/cat.png', width: 150), 
             const SizedBox(height: 20),
             const Text(
               '曲谱解析中~图片解析较慢哦',

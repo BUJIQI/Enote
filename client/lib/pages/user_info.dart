@@ -194,11 +194,9 @@ class _UserInfoPageState extends State<UserInfoPage> {
               );
 
               if (newName != null && newName.isNotEmpty) {
-                // ✅ 更新本地缓存
                 SharedPreferences prefs = await SharedPreferences.getInstance();
                 await prefs.setString('username', newName);
 
-                // ✅ 更新 UI
                 setState(() {
                   // 需要用 widget 变量更新状态
                   Navigator.pushReplacement(
@@ -212,7 +210,7 @@ class _UserInfoPageState extends State<UserInfoPage> {
                   );
                 });
 
-                // ✅ 同步云端：此处模拟，也可替换为实际 API 调用
+                // 同步云端
                 // await uploadUserNameToCloud(newName);
               }
             },
@@ -320,10 +318,10 @@ class _UserInfoPageState extends State<UserInfoPage> {
           onChanged: (value) async {
             setState(() => _syncEnabled = value);
 
-            // ✅ 发送到云端
+            // 发送到云端
             await _sendSyncStatusToCloud(value);
 
-            // ✅ 更新本地数据库
+            // 更新本地数据库
             final dbHelper = DatabaseHelper();
           },
         )

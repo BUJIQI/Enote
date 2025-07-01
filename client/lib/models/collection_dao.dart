@@ -1,7 +1,6 @@
-// ✅ 修改文件：collection_dao.dart
 import 'package:sqflite/sqflite.dart';
 import 'database_helper.dart';
-import 'score_item.dart';  // 导入 ScoreItem 模型
+import 'score_item.dart';  
 import 'package:uuid/uuid.dart';
 
 final uuid = Uuid();

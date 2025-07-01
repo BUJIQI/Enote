@@ -1,4 +1,3 @@
-// ✅ 修改文件：score_dao.dart
 import 'package:sqflite/sqflite.dart';
 import 'database_helper.dart';
 import 'package:uuid/uuid.dart';
@@ -23,7 +22,7 @@ class ScoreDao {
       'Title': title,
       'Create_time': now,
       'Modify_time': now,
-      'MxlPath': mxlPath,  // ✅ 更新字段
+      'MxlPath': mxlPath, 
       'Image': image,
     });
     print('✅ 曲谱插入 Score 表：\$scoreId');
@@ -104,7 +103,7 @@ class ScoreDao {
         'MxlPath': mxlPath,
         'Image': image ?? 'assets/imgs/score_icon.jpg',
       },
-      conflictAlgorithm: ConflictAlgorithm.replace, // ✅ 覆盖已有记录
+      conflictAlgorithm: ConflictAlgorithm.replace, //覆盖已有记录
     );
     print('🔁 已覆盖本地 Score：$scoreId');
   }

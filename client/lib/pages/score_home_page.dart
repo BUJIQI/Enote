@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'score_detail_page.dart';  // 这里是你创建的 dart 文件路径
+import 'score_detail_page.dart'; 
 import '../widgets/import_score.dart';
 import '../models/score_item.dart';
 import '../models/score_dao.dart';
@@ -14,10 +14,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'Register.dart';
 import 'enter.dart';
 import 'user_info.dart';
-import 'dart:convert'; // for jsonEncode / jsonDecode / base64Decode
-import 'dart:io'; // for File
-import 'package:path_provider/path_provider.dart'; // for getApplicationDocumentsDirectory
-import 'package:http/http.dart' as http; // for http.MultipartRequest
+import 'dart:convert'; 
+import 'dart:io'; 
+import 'package:path_provider/path_provider.dart'; 
+import 'package:http/http.dart' as http;
 
 
 
@@ -62,7 +62,7 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
           final scoreId = await ScoreDao.insertScore(
             userid: userid,
             title: item.name,
-            mxlPath: item.mxlPath, // ✅ 改为 mxlPath
+            mxlPath: item.mxlPath,
             image: item.image,
           );
 
@@ -75,7 +75,7 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
 
           setState(() {
             scoreList.add(savedItem);
-            sortScores(); // ✅ 保持当前排序方式
+            sortScores(); 
           });
 
           Navigator.push(
@@ -108,9 +108,9 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
         name: row['Title'] as String,
         image: row['Image'] as String? ?? 'assets/imgs/score_icon.jpg',
         mxlPath: row['MxlPath'] as String?,
-        modifyTime: row['Modify_time'] as String?,// ✅ 加上这行
+        modifyTime: row['Modify_time'] as String?,
       )).toList();
-      sortScores(); // ✅ 排序
+      sortScores(); 
     });
   }
 
@@ -119,7 +119,7 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
       scoreList.sort((a, b) {
         final aTime = DateTime.tryParse(a.modifyTime ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
         final bTime = DateTime.tryParse(b.modifyTime ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
-        return bTime.compareTo(aTime); // ✅ 最近时间在前
+        return bTime.compareTo(aTime); 
       });
     } else if (currentSort == '首字母排序') {
       scoreList.sort((a, b) => a.name.compareTo(b.name));
@@ -196,7 +196,7 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
       activeTab = tab;
 
       if (tab == 'shelf') {
-        selectedCollection = null; // ✅ 切换回谱架时清除谱集选中状态
+        selectedCollection = null; 
       }
     });
   }
@@ -340,7 +340,7 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
 
     await CollectionItemDao.insertScoreToCollection(
       collectionId: collectionId,
-      scoreId: scoreId, // ✅ 正确传入函数参数
+      scoreId: scoreId, 
       orderno: DateTime.now().millisecondsSinceEpoch,
     );
     print('✅ 插入成功：$scoreId 添加到 $collectionId');
@@ -363,7 +363,7 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
           title: Text('选择要添加的谱集'),
           content: Container(
             width: double.maxFinite,
-            height: 300, // ✅ 显式设置整个内容区域高度
+            height: 300, 
             child: FutureBuilder<List<Map<String, dynamic>>>(
               future: CollectionInfoDao.fetchCollections(UserSession.getUserId()),
               builder: (context, snapshot) {
@@ -400,7 +400,7 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
                           await CollectionItemDao.debugPrintAllCollectionItems();
 
                           Navigator.pop(context);
-                          setState(() {}); // ✅ 触发 UI 刷新
+                          setState(() {}); 
                         }
 
                     );
@@ -690,7 +690,7 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
           );
         }
 
-        final item = collectionList[index - 1]; // ⚠️ 注意减一
+        final item = collectionList[index - 1];
         return GestureDetector(
           onTap: () {
             setState(() {

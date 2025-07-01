@@ -3,7 +3,7 @@ class ScoreItem {
   final String name;
   final String image;
   final String? mxlPath;
-  final String? modifyTime; // ✅ 新增字段
+  final String? modifyTime; 
 
   ScoreItem({
     required this.id,
