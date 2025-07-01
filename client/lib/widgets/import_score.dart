@@ -51,7 +51,7 @@ class ImportHandler {
       builder: (_) => const LoadingDialog(),
     );
 
-    final uri = Uri.parse('http://47.96.162.67:5000/omr');
+    final uri = Uri.parse('http://10.0.2.2:5000/omr');
     final request = http.MultipartRequest('POST', uri)
       ..files.add(http.MultipartFile.fromBytes('file', fileBytes, filename: result.files.first.name));
 

@@ -220,7 +220,7 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
     final userid = UserSession.getUserId();
     final allScores = await ScoreDao.fetchAllScores(userid: userid);
 
-    final uri = Uri.parse('http://47.96.162.67:5000/scores/sync');
+    final uri = Uri.parse('http://10.0.2.2:5000/scores/sync');
     final request = http.MultipartRequest('POST', uri);
 
     // 添加曲谱 JSON 元信息

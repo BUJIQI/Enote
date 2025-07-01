@@ -53,7 +53,7 @@ class _EditUserInfoPageState extends State<EditUserInfoPage> {
         return;
       }
 
-      final url = Uri.parse('http://47.96.162.67:5000/edit_user_info'); // 替换成你真实的后端地址
+      final url = Uri.parse('http://10.0.2.2:5000/edit_user_info'); // 替换成你真实的后端地址
       final response = await http.post(
         url,
         headers: {

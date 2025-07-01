@@ -113,6 +113,24 @@
   - 点击右侧栏图标 Device Manager → “+” Create Virtual Device
   - 推荐系统版本 Android 15.0+
 
+- 修改Flat的appid：
+  ```html
+  // .\client\assets\web\editor.html
+
+  // Flutter 调用：向 WebView 传入 XML 初始化乐谱
+  window.receiveXmlFromFlutter = async function(xmlText) {
+    const container = document.getElementById('embed-container');
+
+    embedInstance = new Flat.Embed(container, {
+      embedParams: {
+        appId: 'enter_your_flat_appid_here', // 在这里替换你自己的flat appid
+        mode: 'edit',
+        layout: 'page',
+        controlsPosition: 'top',
+        branding: false
+      }
+    });
+  ```
 - 后端地址配置：
   - 测试本地服务端，后端地址为 `10.0.2.2`
   - 若访问远程服务器，需要修改服务器地址
