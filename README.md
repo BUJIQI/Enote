@@ -6,10 +6,8 @@
 ## 目录
 
 - [功能特性](#-功能特性)
-- [界面预览](#-界面预览)
-- [环境配置](#-环境配置)
-
-
+- [界面预览](#界面预览)
+- [环境配置](#环境配置)
 
 ---
 
@@ -45,43 +43,38 @@
 ---
 ## 界面预览
 
-### 登录页面
-简洁直观的登录入口，支持云同步开关与密码找回功能  
-![登录页面](images/login.png)
+### 登录、注册、个人信息页面
+**登陆界面**：简洁直观的登录入口，支持云同步开关与密码找回功能  
+**注册界面**：支持昵称、密码填写与云同步配置，视觉层次清晰，注册引导明确  
+**个人信息页**：展示用户昵称、云同步开关、更多设置与退出入口，布局清爽  
+<img src="images/login.png" alt="登录页面" width="300" height="640"/>
+<img src="images/register.png" alt="注册页面" width="300" height="640"/>
+<img src="images/profile.png" alt="我的资料页面" width="300" height="640"/>
 
-### 注册页面
-支持昵称、密码填写与云同步配置，视觉层次清晰，注册引导明确  
-![注册页面](images/register.png)
-
-### 个人主页（我的资料）
-展示用户昵称、云同步开关、更多设置与退出入口，布局清爽  
-![我的资料页面](images/profile.png)
 
 ### 乐谱导入界面
 支持图像/MXL导入，顶部提供搜索与分类切换，快速管理曲谱资源  
-![曲谱导入界面](images/import.png)
-
-### 谱架主页面
-支持曲谱展示、排序、搜索与批量导入，是曲谱管理主场景  
-![谱架主页面](images/shelf.png)
+<img src="images/import.png" alt="曲谱导入界面" width="250" height="350"/>
 
 ### 乐谱编辑器
 基于 WebView 的 MusicXML 编辑器，支持音符、力度等可视化编辑  
-![乐谱编辑器](images/editor.png)
-![乐谱保存](images/save.png)
+<img src="images/editor.png" alt="乐谱编辑器" width="300" height="640"/>
+<img src="images/save.png" alt="乐谱保存" width="300" height="640"/>
+
+### 谱架主页面
+支持曲谱展示、排序、搜索，是曲谱管理主场景  
+<img src="images/shelf.png" alt="谱架主页面" width="250" height="160"/>
 
 ### 曲谱操作菜单（长按弹出）
 快速重命名、删除、添加到谱集等操作，提升管理效率  
-![曲谱操作菜单](images/menu.png)
-
-
-### 曲谱重命名弹窗
-支持直接修改标题，交互明确  
-![曲谱重命名弹窗](images/rename.png)
+<img src="images/menu.png" alt="曲谱操作菜单" width="300" height="640"/>
+<img src="images/rename.png" alt="曲谱重命名弹窗" width="300" height="640"/>
 
 ### 谱集创建页面
 极简表单风格，仅输入名称即可新建谱集，操作顺畅  
-![谱集创建页面](images/create_collection.png)
+<img src="images/create_collection.png" alt="谱集创建页面" width="300" height="640"/>
+
+---
 
 ## 环境配置
 
@@ -150,9 +143,6 @@
 
 ---
 
-## 📸 截图预览
-
-> 可视化编辑界面、曲谱展示、谱集管理、主题切换等页面待补充...
 
 
 
