@@ -354,7 +354,7 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
     ));
   }
 
-
+  // 添加谱集的选择窗口
   void showAddToCollectionDialog(ScoreItem item) {
     showDialog(
       context: context,
@@ -414,7 +414,7 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
     );
   }
 
-
+  // 长按曲谱
   void showScoreActions(ScoreItem item, int index) {
     showModalBottomSheet(
       context: context,
@@ -458,7 +458,7 @@ class _ScoreHomePageState extends State<ScoreHomePage> {
     );
   }
 
-
+  // 重命名窗口
   void showRenameDialog(ScoreItem item, int index) {
     TextEditingController controller = TextEditingController(text: item.name);
 
