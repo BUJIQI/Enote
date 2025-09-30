@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>Enote 项目分析报告</title>
+  <style>
+    body {
+      font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+      line-height: 1.6;
+      color: #1a1a1a;
+      background: #fdfdfd;
+      margin: 32px;
+    }
+    h1 { font-size: 28px; margin-bottom: 16px; }
+    h2 { font-size: 22px; margin-top: 32px; }
+    h3 { font-size: 18px; margin-top: 24px; }
+    p { margin: 8px 0; }
+    ul, ol { margin: 8px 0 16px 24px; padding: 0; }
+    li { margin-bottom: 6px; }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 12px 0 20px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid #d0d0d0;
+      padding: 8px 10px;
+      vertical-align: top;
+    }
+    th { background: #f5f5f5; text-align: left; }
+    code {
+      background: #f3f3f3;
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    section {
+      background: #ffffff;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
+    mark { background: #fff3cd; padding: 0 2px; }
+  </style>
+</head>
+<body>
+  <h1>Enote 项目分析报告</h1>
+
+  <section>
+    <h2>1. 项目概述</h2>
+    <p>Enote 是一款跨平台乐谱管理应用。前端基于 Flutter，负责本地 SQLite 数据管理、乐谱导入与编辑、用户登录与设置；后端采用 Flask + MongoDB(GridFS) 提供用户认证、乐谱云同步和 OMR（图像转 MXL）能力。Audiveris 与 OpenCV 作为识谱工具链。</p>
+    <ul>
+      <li>客户端：Flutter + Provider + sqflite + SharedPreferences + WebView (Flat Embed)。</li>
+      <li>服务端：Flask + PyMongo + JWT + bcrypt + OpenCV + Audiveris CLI。</li>
+      <li>核心能力：乐谱导入/编辑/分类、用户认证、云同步、图像识谱。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>2. 目录结构总览</h2>
+    <ul>
+      <li><code>client/</code>：Flutter 工程，含 <code>lib/</code> 源码、<code>assets/web</code> 的 Flat 编辑器集成、平台目录（android/ios/windows）。</li>
+      <li><code>server/</code>：Flask 服务，<code>app/routes</code> 提供 API，<code>src/audiveris</code> 打包第三方识谱工具与模型。</li>
+      <li><code>images/</code>：README 中引用的 UI 示意图。</li>
+      <li><code>README.md</code>：总体说明与环境配置指南。</li>
+      <li><code>requirements.txt</code>：服务端依赖清单。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3. 客户端（Flutter）</h2>
+    <h3>3.1 架构摘要</h3>
+    <ul>
+      <li><mark>状态管理</mark>：<code>client/lib/main.dart</code> 通过 <code>ChangeNotifierProvider</code> 注入 <code>ThemeProvider</code> 管理浅色/深色模式。</li>
+      <li><mark>数据持久化</mark>：<code>sqflite</code> + <code>path_provider</code> 保存 <code>Score</code>、<code>CollectionInfo</code>、<code>CollectionItem</code> 三类表（<code>client/lib/models/database_helper.dart</code>）。</li>
+      <li><mark>网络通信</mark>：各页面直接使用 <code>package:http/http.dart</code> 访问 Flask API，地址默认指向模拟器网关 <code>10.0.2.2</code>。</li>
+      <li><mark>文件导入</mark>：<code>client/lib/widgets/import_score.dart</code> 负责从本地选取 MXL/图片、调用 OMR 服务、解压 MXL 并写入本地。</li>
+      <li><mark>乐谱编辑</mark>：<code>client/lib/pages/score_detail_page.dart</code> 使用 <code>WebViewController</code> 与 <code>assets/web/editor.html</code> 里的 Flat Embed 通过 JS channel 传输 MusicXML。</li>
+    </ul>
+
+    <h3>3.2 主要源码文件</h3>
+    <table>
+      <thead>
+        <tr><th>文件</th><th>职责</th><th>关键点</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>client/lib/main.dart</code></td>
+          <td>应用入口</td>
+          <td>注册 Provider，配置路由（主页、隐私政策、设置、用户详情）。</td>
+        </tr>
+        <tr>
+          <td><code>client/lib/pages/score_home_page.dart</code></td>
+          <td>乐谱主界面</td>
+          <td>综合导航、搜索、排序、长按操作、谱集切换、下拉云同步；包含 <code>ProfilePage</code>（未登录态）。</td>
+        </tr>
+        <tr>
+          <td><code>client/lib/widgets/import_score.dart</code></td>
+          <td>乐谱导入</td>
+          <td>使用 <code>FilePicker</code> 读取 MXL/图像，调用 <code>/omr</code>，利用 <code>archive</code> 解包 MXL，操作完成后回调给首页并写入本地 DB。</td>
+        </tr>
+        <tr>
+          <td><code>client/lib/pages/score_detail_page.dart</code></td>
+          <td>乐谱编辑</td>
+          <td>读取本地 MXL 内容，解压提取 XML，通过 JS 注入给 Flat 编辑器；保存时重新打包为 MXL 并刷新 <code>Modify_time</code>。</td>
+        </tr>
+        <tr>
+          <td><code>client/lib/models/database_helper.dart</code></td>
+          <td>SQLite 初始化</td>
+          <td>负责打开/创建数据库，建表 <code>Score</code>、<code>CollectionInfo</code>、<code>CollectionItem</code> 并打印调试信息。</td>
+        </tr>
+        <tr>
+          <td><code>client/lib/models/score_dao.dart</code></td>
+          <td>乐谱 DAO</td>
+          <td>插入、查询、删除、重命名、本地覆盖/更新访问时间等操作。</td>
+        </tr>
+        <tr>
+          <td><code>client/lib/models/collection_info_dao.dart</code><br/><code>client/lib/models/collection_item_dao.dart</code></td>
+          <td>谱集 DAO</td>
+          <td>创建/重命名/删除谱集，维护谱集-曲谱关联并支持排序。</td>
+        </tr>
+        <tr>
+          <td><code>client/lib/models/collection_dao.dart</code></td>
+          <td>旧版谱集 DAO</td>
+          <td>仍在访问已废弃的 <code>Collection</code> 表，引出潜在 bug（见 §8）。</td>
+        </tr>
+        <tr>
+          <td><code>client/lib/models/user_session.dart</code></td>
+          <td>临时用户态</td>
+          <td>硬编码 <code>dev_mock_user</code>，尚未与登录流程整合。</td>
+        </tr>
+        <tr>
+          <td><code>client/lib/pages/enter.dart</code><br/><code>register.dart</code><br/><code>reset_password.dart</code></td>
+          <td>用户认证 UI</td>
+          <td>表单校验、调用后端 <code>/login</code>/<code>/register</code>/<code>/reset_password</code>，使用 <code>SharedPreferences</code> 缓存 token 和昵称。</td>
+        </tr>
+        <tr>
+          <td><code>client/lib/pages/user_info.dart</code><br/><code>edit_user_info_page.dart</code><br/><code>more_settings_page.dart</code></td>
+          <td>用户中心</td>
+          <td>展示登录信息、云同步开关、退出登录、编辑资料、跳转隐私/关于页面。</td>
+        </tr>
+        <tr>
+          <td><code>client/assets/web/editor.html</code><br/><code>embed.min.js</code></td>
+          <td>嵌入式编辑器</td>
+          <td>加载 Flat Embed，定义 <code>receiveXmlFromFlutter</code> 与 <code>saveAndSendToFlutter()</code> 供 WebView/Flutter 双向通信。</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>4. 服务端（Flask）</h2>
+    <table>
+      <thead>
+        <tr><th>文件</th><th>职责</th><th>关键点</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>server/run.py</code></td>
+          <td>启动入口</td>
+          <td>创建应用并以 debug 模式运行 Flask。</td>
+        </tr>
+        <tr>
+          <td><code>server/app/__init__.py</code></td>
+          <td>应用工厂</td>
+          <td>加载配置、初始化 PyMongo、注册 <code>auth</code>/<code>scores</code>/<code>omr</code> 蓝图。</td>
+        </tr>
+        <tr>
+          <td><code>server/app/config.py</code></td>
+          <td>配置</td>
+          <td>SECRET_KEY、MONGO_URI、JWT_SECRET_KEY 读取环境变量或使用默认值。</td>
+        </tr>
+        <tr>
+          <td><code>server/app/utils/auth.py</code></td>
+          <td>JWT 工具</td>
+          <td>生成/校验 token，当前未设置过期时间。</td>
+        </tr>
+        <tr>
+          <td><code>server/app/routes/auth.py</code></td>
+          <td>用户认证 API</td>
+          <td>注册、登录（校验 bcrypt）、重置密码、注销、云同步开关、编辑资料；全部依赖 MongoDB <code>users</code> 集合。</td>
+        </tr>
+        <tr>
+          <td><code>server/app/routes/scores.py</code></td>
+          <td>乐谱同步 API</td>
+          <td>使用 GridFS 存储 MXL，比较客户端/服务端修改时间决定覆盖方向，支持删除。</td>
+        </tr>
+        <tr>
+          <td><code>server/app/routes/omr.py</code></td>
+          <td>图像识谱</td>
+          <td>保存上传图片，OpenCV 预处理后调用 <code>audiveris.bat</code>，返回生成的 MXL 文件。</td>
+        </tr>
+        <tr>
+          <td><code>server/src/audiveris/</code></td>
+          <td>外部工具</td>
+          <td>包含 Audiveris CLI、字体、tessdata、输出目录、示例图片，用于 OMR 管线。</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>5. 数据通信方式</h2>
+    <table>
+      <thead>
+        <tr><th>调用方</th><th>HTTP</th><th>接口</th><th>载荷/要点</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Flutter</td>
+          <td>POST</td>
+          <td><code>/login</code></td>
+          <td>JSON：用户名、密码、<code>sync_enabled</code></td>
+          <td>返回 JWT；保存在 SharedPreferences。</td>
+        </tr>
+        <tr>
+          <td>Flutter</td>
+          <td>POST</td>
+          <td><code>/register</code></td>
+          <td>JSON：用户名、密码（sync 标志未上传）</td>
+          <td>返回提示文本及新用户 ID。</td>
+        </tr>
+        <tr>
+          <td>Flutter</td>
+          <td>POST</td>
+          <td><code>/reset_password</code></td>
+          <td>JSON：用户名、新密码</td>
+          <td>无 token，公开接口。</td>
+        </tr>
+        <tr>
+          <td>Flutter</td>
+          <td>GET</td>
+          <td><code>/logout</code></td>
+          <td>Header：<code>Authorization</code>（裸 token，未加 Bearer）</td>
+          <td>更新 Mongo 中 <code>last_logout</code>。</td>
+        </tr>
+        <tr>
+          <td>Flutter</td>
+          <td>POST</td>
+          <td><code>/sync_enabled</code></td>
+          <td>JSON：<code>sync_enabled</code>，Header：token</td>
+          <td>更新 Mongo 用户字段。</td>
+        </tr>
+        <tr>
+          <td>Flutter</td>
+          <td>POST</td>
+          <td><code>/edit_user_info</code></td>
+          <td>JSON：新昵称/新密码，Header：token</td>
+          <td>修改用户信息。</td>
+        </tr>
+        <tr>
+          <td>Flutter</td>
+          <td>POST (multipart)</td>
+          <td><code>/scores/sync</code></td>
+          <td>字段 <code>scores</code>（JSON 字符串）+ 多个 MXL 文件</td>
+          <td>服务器当前用 <code>request.json</code> 读取，存在兼容问题（§8）。</td>
+        </tr>
+        <tr>
+          <td>Flutter</td>
+          <td>POST</td>
+          <td><code>/scores/delete</code></td>
+          <td>JSON：<code>scoreId</code></td>
+          <td>未校验 token。</td>
+        </tr>
+        <tr>
+          <td>Flutter</td>
+          <td>POST (multipart)</td>
+          <td><code>/omr</code></td>
+          <td>上传图片文件</td>
+          <td>返回 MXL 二进制流。</td>
+        </tr>
+        <tr>
+          <td>Flutter ↔ Flat WebView</td>
+          <td>JS Channel</td>
+          <td><code>FlutterPostMessage</code>/<code>receiveXmlFromFlutter</code></td>
+          <td>传输 MusicXML 字符串</td>
+          <td>WebView 与 Flutter 本地通信。</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>6. 数据处理方法</h2>
+    <h3>6.1 客户端</h3>
+    <ul>
+      <li><strong>SQLite 持久化：</strong>通过 <code>DatabaseHelper</code> 初始化数据库，DAO 层读写 <code>Score</code>/<code>CollectionInfo</code>/<code>CollectionItem</code>。</li>
+      <li><strong>乐谱文件：</strong>使用 <code>archive.ZipDecoder</code> 解压 MXL，抽取 XML 以供 WebView；保存时用 <code>ZipEncoder</code> 重新生成 MXL。</li>
+      <li><strong>同步数据准备：</strong><code>syncScoresWithServer()</code> 将 DB 记录映射成 JSON + 文件，打包为 multipart 请求。</li>
+      <li><strong>用户状态：</strong>SharedPreferences 保存 token / username；<code>UserSession</code> 充当本地占位用户。</li>
+      <li><strong>UI 逻辑：</strong>多处使用 <code>showDialog</code>/<code>Navigator</code> 管理弹窗与路由；Provider 仅负责主题。</li>
+    </ul>
+    <h3>6.2 服务端</h3>
+    <ul>
+      <li><strong>密码处理：</strong>注册/修改密码时使用 <code>bcrypt</code> 哈希；登录使用 <code>bcrypt.checkpw</code> 校验。</li>
+      <li><strong>令牌生成：</strong><code>utils/auth.py</code> 通过 PyJWT 生成 HS256 token（无过期时间）。</li>
+      <li><strong>乐谱存储：</strong>元数据保存在 Mongo 集合 <code>scores</code>，MXL 文件存入 GridFS，字段 <code>fileId</code> 引用。</li>
+      <li><strong>同步比较：</strong>根据客户端提交的 <code>modifyTime</code> 与服务器版本比对决定覆盖方向。</li>
+      <li><strong>图像处理：</strong>OpenCV 将图片放大、转灰度再写回磁盘，设置 <code>TESSDATA_PREFIX</code> 后调用 Audiveris 生成 MXL。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>7. 关键业务流程</h2>
+    <ol>
+      <li><strong>应用启动：</strong>加载主题 Provider → 进入 <code>ScoreHomePage</code>，初始化 <code>ImportHandler</code> 并从 SQLite 读取曲谱/谱集。</li>
+      <li><strong>用户登录：</strong>在 <code>LoginPage</code> 输入账号 → 调用 <code>/login</code> → 成功后缓存 token、跳转 <code>UserInfoPage</code>。</li>
+      <li><strong>曲谱导入：</strong>点击导入 → 选择 MXL 或图像 → 若图像则调用 <code>/omr</code> 返回 MXL → 保存到本地临时文件 → 回调插入 SQLite → 跳转编辑页。</li>
+      <li><strong>曲谱编辑：</strong>编辑页加载本地 MXL → 注入 XML → 用户编辑 → 触发保存 → WebView 回传 XML → 重打包写回文件并更新数据库时间戳。</li>
+      <li><strong>云同步：</strong>下拉刷新或初始化时调用 <code>syncScoresWithServer()</code> → 打包本地数据请求服务端 → 按修改时间合并 → 服务器可能返回更新后的文件数据。</li>
+      <li><strong>谱集管理：</strong>通过对话框创建/重命名谱集 → 使用 DAO 在 <code>CollectionItem</code> 中维护顺序 → 详情页 (<code>CollectionDetailPage</code>) 展示谱集内曲谱。</li>
+      <li><strong>用户设置：</strong><code>UserInfoPage</code> 控制云同步开关、编辑资料、退出登录；<code>MoreSettingsPage</code> 切换主题、进入隐私政策/关于我们。</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>8. 风险与改进建议</h2>
+    <ol>
+      <li><strong>谱集 DAO 与数据库结构不匹配：</strong><code>client/lib/models/collection_dao.dart:16</code> 仍对 <code>Collection</code> 表插入/查询，而 <code>client/lib/models/database_helper.dart:52</code> 仅构建 <code>CollectionInfo</code> 与 <code>CollectionItem</code>。调用这些方法会抛出 “no such table: Collection”。建议移除旧 DAO 或改为操作新表。</li>
+      <li><strong>同步请求字段不一致：</strong><code>client/lib/pages/score_home_page.dart:232</code> 发送的 JSON 使用 <code>Access_time</code> 字段，而数据库列为 <code>Modify_time</code>；同一方法未携带 token。服务端 <code>server/app/routes/scores.py:16</code> 使用 <code>request.json</code> 读取元数据，但 multipart 请求不会填充 <code>request.json</code>，导致 <code>metadata</code> 始终为空。应统一字段名并使用 <code>request.form</code> 或 <code>request.files</code> + <code>json.loads</code> 解析。</li>
+      <li><strong>乐谱接口缺乏鉴权：</strong><code>server/app/routes/scores.py:10</code>（同步）与 <code>server/app/routes/scores.py:110</code>（删除）未校验 JWT，使得任何人都能操作云端数据。应像用户接口一样验证 token 并按用户名隔离数据。</li>
+      <li><strong>返回值含不可序列化对象：</strong><code>server/app/routes/scores.py:78</code> 在同步响应中直接返回 Mongo 文档（包含 <code>ObjectId</code>），默认 <code>jsonify</code> 无法序列化，会触发 500。需主动将 <code>_id</code>/<code>fileId</code> 转为字符串。</li>
+      <li><strong>本地用户标识固定：</strong><code>client/lib/models/user_session.dart:2</code> 始终返回 <code>dev_mock_user</code>，无论是否登录。云同步及本地 DB 实际无法区分真实用户。建议登录成功后写入真实用户 ID/用户名，并在退出时清理。</li>
+      <li><strong>缺少同步结果回流：</strong><code>client/lib/pages/score_home_page.dart:255</code> 仅打印服务端消息，没有处理“服务端较新”场景返回的 Base64 文件，用户端无法自动覆盖。需解析响应并更新 SQLite 与本地文件。</li>
+      <li><strong>安全与稳定性：</strong>密码相关接口（如 <code>/reset_password</code>）缺少频率控制；<code>omr</code> 接口未限制文件类型及大小；Audiveris 调用依赖本地路径，部署环境需谨慎配置。</li>
+    </ol>
+  </section>
+</body>
+</html>
